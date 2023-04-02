@@ -1536,6 +1536,10 @@ def CreatePlantUMLFile(input_folder_path, output_puml_file=None, render_server=N
 
     """Render image file, using default server if not specified
     """
+    """return if specify server to No
+    """
+    if render_server == 'no':
+        return
     with open(output_puml_filepath, 'rb') as fd:
         content = fd.read().decode('utf-8')
     if render_server is None:
