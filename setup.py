@@ -33,6 +33,7 @@ CLASSIFIERS = [
 ]
 INSTALL_REQUIRES = ['argparse', 'robotpy-cppheaderparser', 'jinja2']
 INSTALL_REQUIRES += ['sphinx', ]
+INSTALL_REQUIRES += ['plantweb==1.2.1', ]
 SETUP_REQUIRES = ['sphinx', 'numpydoc']
 ###################################################################
 

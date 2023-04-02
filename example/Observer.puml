@@ -1,0 +1,80 @@
+@startuml
+
+
+
+
+
+/' Objects '/
+
+class ConcreteObserverA {
+	+ConcreteObserverA(const int state)
+	+getState() : int
+	-m_state : int
+	+update(ISubject* subject) : void
+}
+
+
+class ConcreteObserverB {
+	+ConcreteObserverB(const int state)
+	+getState() : int
+	-m_state : int
+	+update(ISubject* subject) : void
+}
+
+
+class ConcreteSubject {
+	+ConcreteSubject()
+	+getState() : int
+	-m_state : int
+	-m_observers : std::vector<IObserever*>
+	+add(IObserever* observer) : void
+	+notify() : void
+	+setState(const int state) : void
+}
+
+
+abstract class IObserever {
+	+{abstract} getState() : int
+	+{abstract} update(ISubject* subject) : void
+}
+
+
+abstract class ISubject {
+	+{abstract} getState() : int
+	+{abstract} add(IObserever* observer) : void
+	+{abstract} notify() : void
+	+{abstract} setState(const int state) : void
+}
+
+
+
+
+
+/' Inheritance relationships '/
+
+.IObserever <|-- .ConcreteObserverA
+
+
+.IObserever <|-- .ConcreteObserverB
+
+
+.ISubject <|-- .ConcreteSubject
+
+
+
+
+
+/' Aggregation relationships '/
+
+.ConcreteSubject o-- .IObserever
+
+
+
+
+
+
+/' Nested objects '/
+
+
+
+@enduml

@@ -7,6 +7,11 @@ import argparse
 import CppHeaderParser
 import jinja2
 
+from plantweb.render import render
+from os.path import splitext
+
+import webbrowser
+
 # %% Constants
 
 
@@ -1395,6 +1400,30 @@ def expand_file_list(input_files):
         file_list += glob.glob(input_file, recursive=True)
     return file_list
 
+def get_header_list(input_folder):
+    """Find all files in folder (expanding **/*.h*)
+
+    This function uses `os.walk()` and `glob` to find files matching each string in the input
+    list.
+
+    Parameters
+    ----------
+    input_folder : str
+        String representing folder contains project
+
+    Returns
+    -------
+    list(str)
+        List of filenames (with wildcards expanded).  Each element contains the
+        name of an existing file
+    """
+    file_list = []
+    for root, dirs, filenames in os.walk(input_folder):
+        for filename in filenames:
+            if filename.endswith(('.h', '.hpp')):
+                file_list.append(os.path.join(root, filename))
+    return file_list
+
 def wrap_namespace(input_str, namespace):
     """Wrap string in namespace
 
@@ -1436,7 +1465,40 @@ def get_namespace_link_name(namespace):
 # %% Main function
 
 
-def CreatePlantUMLFile(file_list, output_file=None, **diagram_kwargs):
+# def CreatePlantUMLFile(file_list, output_file=None, **diagram_kwargs):
+#     """Create PlantUML file from list of header files
+
+#     This function parses a list of C++ header files and generates a file for
+#     use with PlantUML.
+
+#     Parameters
+#     ----------
+#     file_list : list(str)
+#         List of filenames (possibly, with wildcards resolved with the
+#         :func:`expand_file_list` function)
+#     output_file : str
+#         Name of the output file
+#     diagram_kwargs : dict
+#         Additional parameters passed to :class:`Diagram` constructor
+#     """
+#     if isinstance(file_list, str):
+#         file_list_c = [file_list, ]
+#     else:
+#         file_list_c = file_list
+#     diag = Diagram(**diagram_kwargs)
+#     diag.create_from_file_list(list(set(expand_file_list(file_list_c))))
+#     diag_render = diag.render()
+
+#     if output_file is None:
+#         print(diag_render)
+#     else:
+#         with open(output_file, 'wt') as fid:
+#             fid.write(diag_render)
+
+# %% Main function (folder version)
+
+
+def CreatePlantUMLFile(input_folder_path, output_puml_file=None, render_server=None, **diagram_kwargs):
     """Create PlantUML file from list of header files
 
     This function parses a list of C++ header files and generates a file for
@@ -1444,27 +1506,61 @@ def CreatePlantUMLFile(file_list, output_file=None, **diagram_kwargs):
 
     Parameters
     ----------
-    file_list : list(str)
-        List of filenames (possibly, with wildcards resolved with the
-        :func:`expand_file_list` function)
-    output_file : str
+    input_folder_path : str
+        Path to folder contains the project (possibly, with wildcards resolved with the
+        :func:`expand_folder_list` function)
+    output_puml_file : str
         Name of the output file
+    render_servre: str
+        Name of render server
     diagram_kwargs : dict
         Additional parameters passed to :class:`Diagram` constructor
     """
-    if isinstance(file_list, str):
-        file_list_c = [file_list, ]
-    else:
-        file_list_c = file_list
+    absolute_path = os.path.abspath(input_folder_path)
+    clean_path = absolute_path.rstrip("/")
     diag = Diagram(**diagram_kwargs)
-    diag.create_from_file_list(list(set(expand_file_list(file_list_c))))
+    diag.create_from_file_list(list(set(get_header_list(clean_path))))
     diag_render = diag.render()
 
-    if output_file is None:
-        print(diag_render)
-    else:
-        with open(output_file, 'wt') as fid:
-            fid.write(diag_render)
+    if output_puml_file is None:
+        """If output_puml_file is not specified, input_folder will be taken as output file name
+        """
+        output_puml_file = os.path.basename(clean_path) + '.puml'
+        # print(diag_render)
+    
+    with open(output_puml_file, 'wt') as fid:
+        fid.write(diag_render)
+    current_dir = os.getcwd()
+    output_puml_filepath = os.path.join(current_dir, output_puml_file)
+    print("puml file exported as: ", output_puml_filepath)
+
+    """Render image file, using default server if not specified
+    """
+    with open(output_puml_filepath, 'rb') as fd:
+        content = fd.read().decode('utf-8')
+    if render_server is None:
+        render_server = 'http://plantuml.com/plantuml'
+    output, format, engine, sha = render(
+        content,
+        engine='plantuml',
+        format='svg',
+        cacheopts={
+            'use_cache': False
+        },
+        server=render_server)
+
+    # Determine destination file
+    outfile_img = '{}.{}'.format(
+        splitext(os.path.basename(output_puml_file))[0],
+        format
+    )
+
+    # Write output
+    with open(outfile_img, 'wb') as fd:
+        fd.write(output)
+    img_out_path = os.path.join(current_dir, outfile_img)
+    print("uml image exported as: ", img_out_path)
+    webbrowser.open(img_out_path)
 
 # %% Command line interface
 
@@ -1478,13 +1574,19 @@ def main():
     Arguments are read from the command-line, run with ``--help`` for help.
     """
     parser = argparse.ArgumentParser(description='hpp2plantuml tool.')
-    parser.add_argument('-i', '--input-file', dest='input_files',
-                        action='append', metavar='HEADER-FILE', required=True,
-                        help='input file (must be quoted' +
-                        ' when using wildcards)')
+    # parser.add_argument('-i', '--input-file', dest='input_files',
+    #                     action='append', metavar='HEADER-FILE', required=True,
+    #                     help='input file (must be quoted' +
+    #                     ' when using wildcards)')
+    parser.add_argument('-f', '--folder', dest='input_folder_path',
+                        metavar='INPUT-FOLDER', required=True,
+                        help='input folder path')
     parser.add_argument('-o', '--output-file', dest='output_file',
                         required=False, default=None, metavar='FILE',
                         help='output file')
+    parser.add_argument('-s', '--server', dest='render_server',
+                        required=False, default='http://plantuml.com/plantuml',
+                        metavar='SERVER', help='render server')
     parser.add_argument('-d', '--enable-dependency', dest='flag_dep',
                         required=False, default=False, action='store_true',
                         help='Extract dependency relationships from method ' +
@@ -1493,10 +1595,10 @@ def main():
                         required=False, default=None, metavar='JINJA-FILE',
                         help='path to jinja2 template file')
     parser.add_argument('--version', action='version',
-                        version='%(prog)s ' + '0.8.3')
+                        version='%(prog)s ' + '1.8.3')
     args = parser.parse_args()
-    if len(args.input_files) > 0:
-        CreatePlantUMLFile(args.input_files, args.output_file,
+    if len(args.input_folder_path) > 0:
+        CreatePlantUMLFile(args.input_folder_path, args.output_file, args.render_server,
                            template_file=args.template_file,
                            flag_dep=args.flag_dep)
 
