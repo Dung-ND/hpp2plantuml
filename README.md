@@ -1,19 +1,25 @@
 # DungND
-## Generate UML diagram from Cpp project (OOP design) on Ubuntu
+## Generate UML diagram from Cpp project (OOP design). Tested on Ubuntu 22.04 and Ubuntu 18.04
 
 The package does two tasks:
 
-- Read header files in the project, and generate classes and their relationship in plantuml format
+- Read header files in the project, and generate classes and their relationship in [plantuml format](https://plantuml.com/class-diagram)
 - Generate UML Class diagram in image format
 
 ## How to use
-
+- Prerequisite: pip3 [guide to install](https://github.com/thibaultmarin/hpp2plantuml),  
+and MarkupSafe  
+```pip3 install MarkupSafe==2.0.1```  
 - Extract the package:  
 ```unzip -q cpp_uml_dungnd.zip```
 - Go inside the package and install it:  
     ```cd hpp2plantuml```  
     and  
-    ```pip install .```
+    ```pip3 install .```  
+To use the package "hpp2plantuml" by calling its name, you must do one of the following option:  
+```export PATH="~/.local/bin:$PATH"```  
+    ##### or install with sudo: (not recommended) to install in "/usr/local/bin"  
+    ```sudo pip3 install .```
 
 - There is a folder called "Example", it contains some code implement some behavioral design pattern
 - Go inside the "example" folder:  
@@ -50,13 +56,22 @@ For example:
 ## Additional information
 
 If your computer has java installed, you can render puml file into image diagram with simple command as guided here: https://plantuml.com/command-line  
-`java -jar plantuml.jar filename.puml -svg`
+```java -jar plantuml.jar filename.puml -svg```  
+- Requirements: java  
+```sudo apt install default-jre```  
+and graphviz  
+```sudo apt install graphviz```
+##### Please check "java_example.sh" in "example" folder for reference  
+
 
 ## Resources used in this package
 
 - [hpp2plantuml](https://github.com/thibaultmarin/hpp2plantuml) - Package for generating ".puml" from cpp header
 - [PlantWeb](https://github.com/carlos-jenkins/plantweb) - Package for sending request to server for rendering diagram
 - [plantuml](https://github.com/plantuml/plantuml/releases) - plantuml.jar file for generating diagram using java
+
+## Format explanation
+[Element](https://plantuml.com/class-diagram)
 
 ## Please give me some feedback if you have any. Thank you!
 [DungND](dungnd.vx@gmail.com)
